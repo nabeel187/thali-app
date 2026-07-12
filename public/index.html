@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thali — a running record of what's on your plate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <h1 class="display">Thali</h1>
+      <p>A running record of what's on your plate. Tell it what you ate, or show it a photo.</p>
+    </div>
+    <button class="icon-btn" id="openSettings">⚙ Set your limit</button>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT COLUMN -->
+    <div>
+      <div class="card plate-card">
+        <svg class="plate-svg" viewBox="0 0 200 200" id="plateSvg">
+          <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(243,233,216,0.08)" stroke-width="14"/>
+          <circle cx="100" cy="100" r="64" fill="none" stroke="rgba(243,233,216,0.08)" stroke-width="14"/>
+          <circle id="calRing" cx="100" cy="100" r="86" fill="none" stroke="#E8A33D" stroke-width="14"
+                  stroke-linecap="round" transform="rotate(-90 100 100)" stroke-dasharray="0 540"/>
+          <circle id="proRing" cx="100" cy="100" r="64" fill="none" stroke="#93A85A" stroke-width="14"
+                  stroke-linecap="round" transform="rotate(-90 100 100)" stroke-dasharray="0 402"/>
+          <text x="100" y="94" text-anchor="middle" class="mono" fill="#F3E9D8" font-size="26" font-weight="600" id="calText">0</text>
+          <text x="100" y="114" text-anchor="middle" class="mono" fill="#C9B8CE" font-size="11" id="calSubText">of 2000 cal</text>
+        </svg>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--saffron)"></span>calories</span>
+          <span><span class="dot" style="background:var(--coriander)"></span>protein</span>
+        </div>
+        <div class="status-line status-empty" id="statusLine">Your plate's empty today. Log a meal to get started.</div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+      <div class="card">
+        <label class="field-label">Log a meal</label>
+        <textarea id="mealText" rows="2" placeholder="e.g. two rotis, daal, and a bowl of yogurt"></textarea>
+        <div class="log-row">
+          <button class="btn btn-primary" id="logTextBtn">Log meal</button>
+          <label class="btn btn-ghost" for="photoInput">📷 Use a photo instead</label>
+          <input type="file" id="photoInput" accept="image/*">
+        </div>
+        <div id="previewArea"></div>
+        <div id="analyzingArea"></div>
+        <div id="errorArea"></div>
+      </div>
+
+      <div class="card">
+        <div class="entries-head">
+          <h2>Today's entries</h2>
+          <span class="day-total" id="dayTotalText"></span>
+        </div>
+        <div id="entriesList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card week-card" style="margin-top:22px;">
+    <h2>This week</h2>
+    <p class="sub">Daily calories against your limit, last 7 days.</p>
+    <div class="chart-area" id="chartArea"></div>
+  </div>
+
+  <footer class="note">
+    Estimates come from an AI reading your description or photo — treat them as a solid ballpark, not a lab measurement.<br>
+    Your meal log is saved in this browser only (localStorage) — it won't follow you to another device or browser.
+  </footer>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal">
+    <h2>Set your daily limit</h2>
+    <p class="sub">Set a number yourself, or tell Thali your weights and it'll work one out.</p>
+
+    <div class="tabs">
+      <button class="tab active" id="tabManual">Set manually</button>
+      <button class="tab" id="tabCompute">Work it out for me</button>
+    </div>
+
+    <div id="manualPane">
+      <div class="field-two">
+        <div class="field-row">
+          <label class="field-label">Daily calories</label>
+          <input type="number" id="manualCal" placeholder="2000">
+        </div>
+        <div class="field-row">
+          <label class="field-label">Daily protein (g)</label>
+          <input type="number" id="manualPro" placeholder="120">
+        </div>
+      </div>
+    </div>
+
+    <div id="computePane" style="display:none;">
+      <div class="radio-row">
+        <label><input type="radio" name="sex" value="female" checked> Female</label>
+        <label><input type="radio" name="sex" value="male"> Male</label>
+      </div>
+      <div class="field-two">
+        <div class="field-row">
+          <label class="field-label">Current weight (kg)</label>
+          <input type="number" id="curWeight" placeholder="70">
+        </div>
+        <div class="field-row">
+          <label class="field-label">Target weight (kg)</label>
+          <input type="number" id="tgtWeight" placeholder="63">
+        </div>
+      </div>
+      <div class="field-two">
+        <div class="field-row">
+          <label class="field-label">Height (cm)</label>
+          <input type="number" id="height" placeholder="165">
+        </div>
+        <div class="field-row">
+          <label class="field-label">Age</label>
+          <input type="number" id="age" placeholder="30">
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Time to reach it</label>
+        <div class="field-two">
+          <input type="number" id="weeks" placeholder="12">
+          <select id="weeksUnit">
+            <option value="weeks">weeks</option>
+            <option value="months">months</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-label">Activity level</label>
+        <select id="activity">
+          <option value="1.2">Sedentary — little to no exercise</option>
+          <option value="1.375">Light — exercise 1–3 days/week</option>
+          <option value="1.55" selected>Moderate — exercise 3–5 days/week</option>
+          <option value="1.725">Active — exercise 6–7 days/week</option>
+          <option value="1.9">Very active — hard daily training</option>
+        </select>
+      </div>
+      <div class="computed-box" id="computedPreview">Fill in the fields above to see your daily limit.</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="closeSettings">Cancel</button>
+      <button class="btn btn-primary" id="saveSettings">Save limit</button>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
