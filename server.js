@@ -12,7 +12,7 @@ app.post("/api/estimate", async (req, res) => {
     const result = await estimateMeal(req.body || {});
     res.json(result);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message, code: err.code || null });
   }
 });
 
