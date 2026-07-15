@@ -4,10 +4,16 @@
 // OpenRouter exposes an OpenAI-compatible /chat/completions endpoint, so this uses
 // the "image_url" (data URL) format for photos rather than Anthropic's native format.
 
-const SYSTEM_INSTRUCTION = `You are a nutrition estimator. Given a description or photo of a meal, estimate its nutrition.
+const SYSTEM_INSTRUCTION = `You are a nutrition estimator. Given a description or photo, first decide whether it actually
+describes food or drink meant to be eaten (a meal, snack, ingredient, or beverage). Gibberish, random
+words, objects, people, places, or anything that isn't food/drink should be treated as NOT food.
+
 Respond with ONLY a JSON object, no markdown fences, no preamble, in exactly this shape:
-{"name": "short meal name, max 6 words", "calories": <number>, "protein_g": <number>, "confidence": "low"|"medium"|"high"}
-Use your best real-world estimate for typical portion sizes if not specified. Never respond with anything except the JSON object.`;
+{"is_food": true|false, "name": "short meal name, max 6 words", "calories": <number>, "protein_g": <number>, "confidence": "low"|"medium"|"high"}
+
+If is_food is false, still include the other fields but set calories and protein_g to 0.
+If is_food is true, use your best real-world estimate for typical portion sizes if not specified.
+Never respond with anything except the JSON object.`;
 
 async function estimateMeal({ mode, text, imageBase64, mediaType }) {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -85,6 +91,13 @@ async function estimateMeal({ mode, text, imageBase64, mediaType }) {
   } catch (e) {
     const err = new Error("Could not parse the model's response as JSON.");
     err.status = 502;
+    throw err;
+  }
+
+  if (parsed.is_food === false) {
+    const err = new Error("inappropriate terms, try some other keywords");
+    err.status = 422;
+    err.code = "not_food";
     throw err;
   }
 
