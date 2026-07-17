@@ -95,7 +95,7 @@ async function estimateMeal({ mode, text, imageBase64, mediaType }) {
   }
 
   if (parsed.is_food === false) {
-    const err = new Error("inappropriate terms, try some other keywords");
+    const err = new Error();
     err.status = 422;
     err.code = "not_food";
     throw err;
