@@ -156,7 +156,7 @@
     return div.innerHTML;
   }
 
-  // ---------- talking to our own backend (which holds the Anthropic key) ----------
+  // ---------- talking to our own backend (which holds the OpenRouter key) ----------
   async function estimateFromText(text) {
     const res = await fetch("/api/estimate", {
       method: "POST",
@@ -164,7 +164,11 @@
       body: JSON.stringify({ mode: "text", text })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Request failed");
+    if (!res.ok) {
+      const e = new Error(data.error || "Request failed");
+      e.code = data.code || null;
+      throw e;
+    }
     return data;
   }
 
@@ -175,7 +179,11 @@
       body: JSON.stringify({ mode: "image", imageBase64: base64Data, mediaType })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Request failed");
+    if (!res.ok) {
+      const e = new Error(data.error || "Request failed");
+      e.code = data.code || null;
+      throw e;
+    }
     return data;
   }
 
@@ -282,7 +290,11 @@
       document.getElementById("photoInput").value = "";
       renderPreview();
     } catch (err) {
-      setError("Couldn't read that meal — try describing it in words instead. (" + err.message + ")");
+      if (err.code === "not_food") {
+        setError(err.message);
+      } else {
+        setError("Couldn't read that meal — try describing it in words instead. (" + err.message + ")");
+      }
     } finally {
       setBusy(false);
     }
@@ -301,7 +313,11 @@
       addEntry(result, null);
       document.getElementById("mealText").value = "";
     } catch (err) {
-      setError("Couldn't estimate that meal — try rephrasing it. (" + err.message + ")");
+      if (err.code === "not_food") {
+        setError(err.message);
+      } else {
+        setError("Couldn't estimate that meal — try rephrasing it. (" + err.message + ")");
+      }
     } finally {
       setBusy(false);
     }
@@ -358,7 +374,7 @@
     const activity = parseFloat(document.getElementById("activity").value);
     const tdee = bmr * activity;
 
-    const weightChangeKg = tgt - cur; // negative = loss
+    const weightChangeKg = tgt - cur;
     const days = weeksVal * 7;
     const dailyAdjustment = (weightChangeKg * 7700) / days;
     let dailyCalories = Math.round(tdee + dailyAdjustment);
